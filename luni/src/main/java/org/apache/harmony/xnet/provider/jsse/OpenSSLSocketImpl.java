@@ -48,6 +48,11 @@ import libcore.io.ErrnoException;
 import libcore.io.Libcore;
 import libcore.io.Streams;
 import libcore.io.StructTimeval;
+import libcore.valera.ValeraConfig;
+import libcore.valera.ValeraConstant;
+import libcore.valera.ValeraIOManager;
+import libcore.valera.ValeraUtil;
+
 import org.apache.harmony.security.provider.cert.X509CertImpl;
 
 /**
@@ -636,7 +641,14 @@ public class OpenSSLSocketImpl
      * for the OpenSSL native implementation. It is used to
      * read data received via SSL protocol.
      */
-    private class SSLInputStream extends InputStream {
+    /* valera begin */
+    public
+    /* valera end */
+    class SSLInputStream extends InputStream {
+    	/* valera begin */
+    	private int connId;
+    	/* valera end */
+    	
         SSLInputStream() throws IOException {
             /*
              * Note: When startHandshake() throws an exception, no
@@ -644,6 +656,12 @@ public class OpenSSLSocketImpl
              */
             OpenSSLSocketImpl.this.startHandshake();
         }
+        
+        /* valera begin */
+        public void setConnId(int id) {
+        	this.connId = id;
+        }
+        /* valera end */
 
         /**
          * Reads one byte. If there is no data in the underlying buffer,
@@ -670,8 +688,47 @@ public class OpenSSLSocketImpl
                 if (byteCount == 0) {
                     return 0;
                 }
-                return NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
-                        OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
+                /* valera begin */
+                int ret = -1;
+                
+                switch (Thread.currentThread().valeraGetMode()) {
+            	case ValeraConstant.MODE_NONE:
+            		ret = NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
+                            OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
+            		break;
+            	case ValeraConstant.MODE_RECORD:
+            		IOException exception = null;
+            		long t1 = System.currentTimeMillis();
+            		try {
+            			ret = NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
+            					OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
+            		} catch (IOException e) {
+            			exception = e;
+            		}
+            		long t2 = System.currentTimeMillis();
+            		if (ValeraConfig.canReplayNetwork())
+            			ValeraIOManager.getInstance().recordSSLSocketRead(connId, buf, offset, byteCount, ret, t2-t1, exception, this);
+            		if (exception != null)
+            			throw exception;
+            		break;
+            	case ValeraConstant.MODE_REPLAY:
+            		try {
+            			if (ValeraConfig.canReplayNetwork())
+            				ret = ValeraIOManager.getInstance().replaySSLSocketRead(connId, buf, offset, byteCount);
+            			else
+            				ret = NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
+                                    OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
+					} catch (IOException ioe) {
+						throw ioe;
+					}
+            		if (ret == ValeraIOManager.CONNECTION_NOT_FOUND)
+            			ret = NativeCrypto.SSL_read(sslNativePointer, socket.getFileDescriptor$(),
+                            OpenSSLSocketImpl.this, buf, offset, byteCount, getSoTimeout());
+            		break;
+            	}
+            	
+                return ret;
+                /* valera end */
             }
         }
     }
@@ -681,7 +738,14 @@ public class OpenSSLSocketImpl
      * for the OpenSSL native implementation. It is used to
      * write data according to the encryption parameters given in SSL context.
      */
-    private class SSLOutputStream extends OutputStream {
+    /* valera begin */
+    public
+    /* valera end */
+    class SSLOutputStream extends OutputStream {
+    	/* valera begin */
+    	private int connId;
+    	/* valera end */
+    	
         SSLOutputStream() throws IOException {
             /*
              * Note: When startHandshake() throws an exception, no
@@ -689,6 +753,12 @@ public class OpenSSLSocketImpl
              */
             OpenSSLSocketImpl.this.startHandshake();
         }
+        
+        /* valera begin */
+        public void setConnId(int id) {
+        	this.connId = id;
+        }
+        /* valera end */
 
         /**
          * Method acts as described in spec for superclass.
@@ -712,8 +782,46 @@ public class OpenSSLSocketImpl
                 if (byteCount == 0) {
                     return;
                 }
-                NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
-                        OpenSSLSocketImpl.this, buf, offset, byteCount, writeTimeoutMilliseconds);
+
+                /* valera begin */
+                switch (Thread.currentThread().valeraGetMode()) {
+            	case ValeraConstant.MODE_NONE:
+            		NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
+                            OpenSSLSocketImpl.this, buf, offset, byteCount, writeTimeoutMilliseconds);
+            		break;
+            	case ValeraConstant.MODE_RECORD:
+            		IOException exception = null;
+            		long t1 = System.currentTimeMillis();
+            		try {
+            			NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
+            					OpenSSLSocketImpl.this, buf, offset, byteCount, writeTimeoutMilliseconds);
+            		} catch (IOException e) {
+            			exception = e;
+            		}
+            		long t2 = System.currentTimeMillis();
+            		if (ValeraConfig.canReplayNetwork())
+            			ValeraIOManager.getInstance().recordSSLSocketWrite(connId, buf, offset, byteCount, t2-t1, exception, this);
+            		if (exception != null)
+            			throw exception;
+            		break;
+            	case ValeraConstant.MODE_REPLAY:
+            		// TODO: implement replay.
+            		int ret = 0;
+            		try {
+            			if (ValeraConfig.canReplayNetwork())
+            				ret = ValeraIOManager.getInstance().replaySSLSocketWrite(connId);
+            			else
+            				NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
+                                    OpenSSLSocketImpl.this, buf, offset, byteCount, writeTimeoutMilliseconds);
+            		} catch (IOException ioe) {
+            			throw ioe;
+            		}
+            		if (ret == ValeraIOManager.CONNECTION_NOT_FOUND)
+            			NativeCrypto.SSL_write(sslNativePointer, socket.getFileDescriptor$(),
+                            OpenSSLSocketImpl.this, buf, offset, byteCount, writeTimeoutMilliseconds);
+            		break;
+            	}
+                /* valera end */
             }
         }
     }

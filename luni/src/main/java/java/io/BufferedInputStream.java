@@ -404,4 +404,12 @@ public class BufferedInputStream extends FilterInputStream {
         }
         return read + localIn.skip(byteCount - read);
     }
+    
+    /* valera begin */
+    // This is obviously not a good design. But I need to get the wrappered
+    // PlainSocketInputStream or SSLInputStream;
+    public InputStream getInputStream() {
+    	return this.in;
+    }
+    /* valera end */
 }

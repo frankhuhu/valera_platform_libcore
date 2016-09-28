@@ -74,4 +74,28 @@ class VMThread {
      * DDMS, which would otherwise be oblivious to Thread.setName calls.
      */
     native void nameChanged(String newName);
+    
+    /* valera begin */
+    native static boolean valeraIsEnabled();
+    native static int valeraGetMode();
+    native static String valeraPackageName();
+    native static void valeraAttachQ(int hashCode);
+    native static void valeraPostMessage(String info);
+    native static void valeraActionBegin(String info);
+    native static void valeraActionEnd(String info);
+    native static void valeraInputEventBegin(int msgId, String info);
+    native static void valeraInputEventEnd(int msgId, String info);
+    native static void valeraBinderBegin(int code, int dataObj, int replyObj, int flags);
+    native static void valeraBinderEnd(int code, int dataObj, int replyObj, int flags);
+    native static void valeraBinderProxyBegin(String info);
+    native static void valeraBinderProxyEnd(String info);
+    native static void valeraVsyncBegin(int msgId);
+    native static void valeraVsyncEnd(int msgId);
+    native static void valeraExitCleanUp();
+    native static int valeraGetThreadId();
+    native static void valeraSetTracing(boolean flag);
+    native static boolean valeraIsTracing();
+    native static void valeraDebugPrint(String msg);
+    native static void valeraLifecycle(String info);
+    /* valera end */
 }

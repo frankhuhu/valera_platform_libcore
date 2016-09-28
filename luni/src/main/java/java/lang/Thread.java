@@ -1027,6 +1027,18 @@ public class Thread implements Runnable {
         hasBeenStarted = true;
 
         VMThread.create(this, stackSize);
+
+        /* valera begin */
+        // TODO: This is debug code.
+        //if (valeraIsEnabled()) {
+        //	try {
+        //		throw new Exception("Thread.start");
+        //	} catch (Exception e) {
+        //		System.out.println("yhu009: VMThread.create " + this.name);
+        //		e.printStackTrace();
+        //	}
+        //}
+        /* valera end */
     }
 
     /**
@@ -1278,4 +1290,90 @@ public class Thread implements Runnable {
             }
         }
     }
+    
+    /* valera begin */
+    public boolean valeraIsEnabled() {
+    	return VMThread.valeraIsEnabled();
+    }
+    
+    public int valeraGetMode() {
+    	return VMThread.valeraGetMode();
+    }
+    
+    public String valeraPackageName() {
+    	return VMThread.valeraPackageName();
+    }
+    
+    public void valeraAttachQ(int hashCode) {
+    	VMThread.valeraAttachQ(hashCode);
+    }
+    
+    public void valeraPostMessage(String info) {
+    	VMThread.valeraPostMessage(info);
+    }
+    
+    public void valeraActionBegin(String info) {
+    	VMThread.valeraActionBegin(info);
+    }
+    
+    public void valeraActionEnd(String info) {
+    	VMThread.valeraActionEnd(info);
+    }
+    
+    public void valeraInputEventBegin(int msgId, String info) {
+    	VMThread.valeraInputEventBegin(msgId, info);
+    }
+    
+    public void valeraInputEventEnd(int msgId, String info) {
+    	VMThread.valeraInputEventEnd(msgId, info);
+    }
+    
+    public void valeraBinderBegin(int code, int dataObj, int replyObj, int flags) {
+    	VMThread.valeraBinderBegin(code, dataObj, replyObj, flags);
+    }
+    
+    public void valeraBinderEnd(int code, int dataObj, int replyObj, int flags) {
+    	VMThread.valeraBinderEnd(code, dataObj, replyObj, flags);
+    }
+    
+    public void valeraBinderProxyBegin(String info) {
+    	VMThread.valeraBinderProxyBegin(info);
+    }
+    
+    public void valeraBinderProxyEnd(String info) {
+    	VMThread.valeraBinderProxyEnd(info);
+    }
+    
+    public void valeraVsyncBegin(int msgId) {
+    	VMThread.valeraVsyncBegin(msgId);
+    }
+    
+    public void valeraVsyncEnd(int msgId) {
+    	VMThread.valeraVsyncEnd(msgId);
+    }
+    
+    public void valeraExitCleanUp() {
+    	VMThread.valeraExitCleanUp();
+    }
+    
+    public int valeraGetThreadId() {
+    	return VMThread.valeraGetThreadId();
+    }
+    
+    public void valeraSetTracing(boolean flag) {
+    	VMThread.valeraSetTracing(flag);
+    }
+    
+    public boolean valeraIsTracing() {
+    	return VMThread.valeraIsTracing();
+    }
+    
+    public void valeraDebugPrint(String msg) {
+    	VMThread.valeraDebugPrint(msg);
+    }
+    
+    public void valeraLifecycle(String info) {
+    	VMThread.valeraLifecycle(info);
+    }
+    /* valera end */
 }

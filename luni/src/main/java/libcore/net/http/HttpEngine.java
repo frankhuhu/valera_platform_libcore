@@ -44,6 +44,17 @@ import javax.net.ssl.SSLSocketFactory;
 import libcore.io.IoUtils;
 import libcore.io.Streams;
 import libcore.util.EmptyArray;
+/* valera begin */
+import java.io.BufferedInputStream;
+import java.net.PlainSocketImpl;
+import java.net.PlainSocketImpl.PlainSocketInputStream;
+import java.net.PlainSocketImpl.PlainSocketOutputStream;
+import org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl;
+import org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.SSLInputStream;
+import org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.SSLOutputStream;
+import libcore.valera.ValeraIOManager;
+import libcore.valera.ValeraUtil;
+/* valera end */
 
 /**
  * Handles a single HTTP request/response pair. Each HTTP engine follows this
@@ -176,6 +187,10 @@ public class HttpEngine {
     /** True if the socket connection is no longer needed by this engine. */
     private boolean connectionReleased;
 
+    /* valera begin */
+    private int mUniqueId = -1;
+    /* valera end */
+
     /**
      * @param requestHeaders the client's supplied request headers. This class
      *     creates a private copy that it can mutate.
@@ -198,6 +213,11 @@ public class HttpEngine {
         }
 
         this.requestHeaders = new RequestHeaders(uri, new RawHeaders(requestHeaders));
+
+        /* valera begin */
+        mUniqueId = ValeraIOManager.getInstance().getUniqueConnId();
+        ValeraIOManager.getInstance().establishConnectionMap(mUniqueId, method, uri, "N/A");
+        /* valera end */
     }
 
     public URI getUri() {
@@ -297,6 +317,11 @@ public class HttpEngine {
         socketOut = connection.getOutputStream();
         requestOut = socketOut;
         socketIn = connection.getInputStream();
+
+        /* valera begin */
+        ValeraIOManager.getInstance().setConnIdForSocketIn(socketIn, mUniqueId);
+        ValeraIOManager.getInstance().setConnIdForSocketOut(socketOut, mUniqueId);
+        /* valera end */
 
         if (hasRequestBody()) {
             initRequestBodyOut();
@@ -655,6 +680,12 @@ public class HttpEngine {
         }
 
         RawHeaders headersToSend = getNetworkRequestHeaders();
+        
+        /* valera begin */
+        //System.out.println("yhu009: network io: writeRequestHeaders "
+        //		+ headersToSend.toHeaderString());
+        /* valera end */
+        
         byte[] bytes = headersToSend.toHeaderString().getBytes(Charsets.ISO_8859_1);
 
         if (contentLength != -1 && bytes.length + contentLength <= MAX_REQUEST_BUFFER_LENGTH) {

@@ -20,6 +20,8 @@ package java.util;
 
 import java.io.Serializable;
 
+import libcore.valera.ValeraUtil;
+
 /**
  * This class provides methods that return pseudo-random values.
  *
@@ -63,8 +65,16 @@ public class Random implements Serializable {
      * on the current time of day in milliseconds.
      */
     public Random() {
+    	/* valera begin */
         // Note: Using identityHashCode() to be hermetic wrt subclasses.
-        setSeed(System.currentTimeMillis() + System.identityHashCode(this));
+        //setSeed(System.currentTimeMillis() + System.identityHashCode(this));
+    	long seed = System.currentTimeMillis() + System.identityHashCode(this);
+    	setSeed(seed);
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random(): " + this.toString() + " seed=" + seed);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+        /* valera end */
     }
 
     /**
@@ -75,7 +85,14 @@ public class Random implements Serializable {
      * The default constructor is likely to provide better randomness.
      */
     public Random(long seed) {
+        //setSeed(seed);
+        /* valera begin */
         setSeed(seed);
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random(seed): " + this.toString() + " seed=" + seed);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+        /* valera end */
     }
 
     /**
@@ -95,7 +112,15 @@ public class Random implements Serializable {
      * Returns a pseudo-random uniformly distributed {@code boolean}.
      */
     public boolean nextBoolean() {
-        return next(1) != 0;
+    	/* valera begin */
+    	boolean ret = next(1) != 0;
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random nextBoolean: " + this.toString() + " " + ret);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	return ret;
+    	/* valera end */
+        //return next(1) != 0;
     }
 
     /**
@@ -113,6 +138,12 @@ public class Random implements Serializable {
             buf[count++] = (byte) rand;
             rand >>= 8;
         }
+        /* valera begin */
+        if (Thread.currentThread().valeraIsEnabled()) {
+        	ValeraUtil.valeraDebugPrint("Random nextBytes: " + this.toString());
+        	ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+        }
+    	/* valera end */
     }
 
     /**
@@ -120,7 +151,15 @@ public class Random implements Serializable {
      * in the half-open range [0.0, 1.0).
      */
     public double nextDouble() {
-        return ((((long) next(26) << 27) + next(27)) / (double) (1L << 53));
+    	/* valera begin */
+    	double ret = ((((long) next(26) << 27) + next(27)) / (double) (1L << 53));
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random nextDouble: " + this.toString() + " " + ret);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	return ret;
+    	/* valera end */
+        //return ((((long) next(26) << 27) + next(27)) / (double) (1L << 53));
     }
 
     /**
@@ -128,7 +167,15 @@ public class Random implements Serializable {
      * in the half-open range [0.0, 1.0).
      */
     public float nextFloat() {
-        return (next(24) / 16777216f);
+    	/* valera begin */
+    	float ret = (next(24) / 16777216f);
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random nextFloat: " + this.toString() + " " + ret);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	return ret;
+    	/* valera end */
+        //return (next(24) / 16777216f);
     }
 
     /**
@@ -156,14 +203,30 @@ public class Random implements Serializable {
         double multiplier = StrictMath.sqrt(-2 * StrictMath.log(s) / s);
         nextNextGaussian = v2 * multiplier;
         haveNextNextGaussian = true;
-        return v1 * multiplier;
+        /* valera begin */
+        double ret = v1 * multiplier;
+        if (Thread.currentThread().valeraIsEnabled()) {
+        	ValeraUtil.valeraDebugPrint("Random nextGaussian: " + this.toString() + " " + ret);
+        	//ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+        }
+    	return ret;
+    	/* valera end */
+        //return v1 * multiplier;
     }
 
     /**
      * Returns a pseudo-random uniformly distributed {@code int}.
      */
     public int nextInt() {
-        return next(32);
+    	/* valera begin */
+    	int ret = next(32);
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random nextInt(): " + this.toString() + " " + ret);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	return ret;
+    	/* valera end */
+        //return next(32);
     }
 
     /**
@@ -182,6 +245,12 @@ public class Random implements Serializable {
             bits = next(31);
             val = bits % n;
         } while (bits - val + (n - 1) < 0);
+        /* valera begin */
+        if (Thread.currentThread().valeraIsEnabled()) {
+        	ValeraUtil.valeraDebugPrint("Random nextInt(n): " + this.toString() + " " + val);
+        	//ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+        }
+    	/* valera end */
         return val;
     }
 
@@ -189,7 +258,15 @@ public class Random implements Serializable {
      * Returns a pseudo-random uniformly distributed {@code long}.
      */
     public long nextLong() {
-        return ((long) next(32) << 32) + next(32);
+    	/* valera begin */
+    	long ret = ((long) next(32) << 32) + next(32);
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random nextLong: " + this.toString() + " " + ret);
+    		ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	return ret;
+    	/* valera end */
+        //return ((long) next(32) << 32) + next(32);
     }
 
     /**
@@ -197,6 +274,12 @@ public class Random implements Serializable {
      * Art of Computer Programming, Volume 2</i>, Section 3.2.1.
      */
     public synchronized void setSeed(long seed) {
+    	/* valera begin */
+    	if (Thread.currentThread().valeraIsEnabled()) {
+    		ValeraUtil.valeraDebugPrint("Random setSeed: " + this.toString() + " " + seed);
+    		//ValeraUtil.valeraDebugPrint(ValeraUtil.getCallingStack("\n"));
+    	}
+    	/* valera end */
         this.seed = (seed ^ multiplier) & ((1L << 48) - 1);
         haveNextNextGaussian = false;
     }

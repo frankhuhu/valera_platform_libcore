@@ -117,6 +117,11 @@ import org.apache.harmony.luni.lang.reflect.Types;
 public final class Class<T> implements Serializable, AnnotatedElement, GenericDeclaration, Type {
 
     private static final long serialVersionUID = 3206093459760846163L;
+    
+    /* valera begin */
+    // How many objects of this class is created.
+    private int count;
+    /* valera end */
 
     /**
      * Lazily computed name of this class; always prefer calling getName().
@@ -1215,4 +1220,13 @@ public final class Class<T> implements Serializable, AnnotatedElement, GenericDe
         System.arraycopy(tail, 0, result, head.length, tail.length);
         return result;
     }
+    
+    /* valera begin */
+    public int incAndGetCounter() {
+    	synchronized (this) {
+    		count++;
+    		return count;
+    	}
+    }
+    /* valera end */
 }

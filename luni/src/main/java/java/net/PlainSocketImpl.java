@@ -33,12 +33,21 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
+
+import org.apache.harmony.xnet.provider.jsse.OpenSSLSocketImpl.SSLInputStream;
+
 import libcore.io.ErrnoException;
 import libcore.io.IoBridge;
 import libcore.io.Libcore;
 import libcore.io.Memory;
 import libcore.io.Streams;
 import static libcore.io.OsConstants.*;
+/* valera begin */
+import libcore.valera.ValeraConfig;
+import libcore.valera.ValeraConstant;
+import libcore.valera.ValeraUtil;
+import libcore.valera.ValeraIOManager;
+/* valera end */
 
 /**
  * @hide used in java.nio.
@@ -217,12 +226,27 @@ public class PlainSocketImpl extends SocketImpl {
         return new PlainSocketInputStream(this);
     }
 
-    private static class PlainSocketInputStream extends InputStream {
+    /* valera begin */
+    public
+    /* valera end */
+    static class PlainSocketInputStream extends InputStream {
         private final PlainSocketImpl socketImpl;
+        /* valera begin */
+        private int connId;
+        /* valera end */
 
         public PlainSocketInputStream(PlainSocketImpl socketImpl) {
             this.socketImpl = socketImpl;
+            /* valera begin */
+            connId = -1;
+            /* valera end */
         }
+        
+        /* valera begin */
+        public void setConnId(int id) {
+        	this.connId = id;
+        }
+        /* valera end */
 
         @Override public int available() throws IOException {
             return socketImpl.available();
@@ -237,7 +261,41 @@ public class PlainSocketImpl extends SocketImpl {
         }
 
         @Override public int read(byte[] buffer, int offset, int byteCount) throws IOException {
-            return socketImpl.read(buffer, offset, byteCount);
+        	int ret = -1;
+        	/* valera begin */
+            switch (Thread.currentThread().valeraGetMode()) {
+        	case ValeraConstant.MODE_NONE:
+        		ret = socketImpl.read(buffer, offset, byteCount);
+        		break;
+        	case ValeraConstant.MODE_RECORD:
+        		IOException exception = null;
+            	long t1 = System.currentTimeMillis();
+            	try {
+            		ret = socketImpl.read(buffer, offset, byteCount);
+            	} catch (IOException e) {
+            		exception = e;
+            	}
+                long t2 = System.currentTimeMillis();
+                if (ValeraConfig.canReplayNetwork())
+                	ValeraIOManager.getInstance().recordPlainSocketRead(connId, buffer, offset, byteCount, ret, t2-t1, exception, this);
+                if (exception != null)
+                	throw exception;
+        		break;
+        	case ValeraConstant.MODE_REPLAY:
+        		try {
+        			if (ValeraConfig.canReplayNetwork())
+        				ret = ValeraIOManager.getInstance().replayPlainSocketRead(connId, buffer, offset, byteCount);
+        			else
+        				ret = socketImpl.read(buffer, offset, byteCount);
+				} catch (IOException ioe) {
+					throw ioe;
+				}
+        		if (ret == ValeraIOManager.CONNECTION_NOT_FOUND)
+        			ret = socketImpl.read(buffer, offset, byteCount);
+        		break;
+        	}
+            /* valere end */
+            return ret;
         }
     }
 
@@ -250,12 +308,27 @@ public class PlainSocketImpl extends SocketImpl {
         return new PlainSocketOutputStream(this);
     }
 
-    private static class PlainSocketOutputStream extends OutputStream {
+    /* valera begin */
+    public
+    /* valera end */
+    static class PlainSocketOutputStream extends OutputStream {
         private final PlainSocketImpl socketImpl;
+        /* valera begin */
+        private int connId;
+        /* valera end */
 
         public PlainSocketOutputStream(PlainSocketImpl socketImpl) {
             this.socketImpl = socketImpl;
+            /* valera begin */
+            connId = -1;
+            /* valera end */
         }
+        
+        /* valera begin */
+        public void setConnId(int id) {
+        	this.connId = id;
+        }
+        /* valera end */
 
         @Override public void close() throws IOException {
             socketImpl.close();
@@ -266,7 +339,40 @@ public class PlainSocketImpl extends SocketImpl {
         }
 
         @Override public void write(byte[] buffer, int offset, int byteCount) throws IOException {
-            socketImpl.write(buffer, offset, byteCount);
+            /* valera begin */
+            switch (Thread.currentThread().valeraGetMode()) {
+        	case ValeraConstant.MODE_NONE:
+        		socketImpl.write(buffer, offset, byteCount);
+        		break;
+        	case ValeraConstant.MODE_RECORD:
+        		IOException exception = null;
+            	long t1 = System.currentTimeMillis();
+            	try {
+            		socketImpl.write(buffer, offset, byteCount);
+            	} catch (IOException e) {
+            		exception = e;
+            	}
+                long t2 = System.currentTimeMillis();
+                if (ValeraConfig.canReplayNetwork())
+                	ValeraIOManager.getInstance().recordPlainSocketWrite(connId, buffer, offset, byteCount, t2-t1, exception, this);
+        		if (exception != null)
+        			throw exception;
+                break;
+        	case ValeraConstant.MODE_REPLAY:
+        		int ret = 0;
+        		try {
+        			if (ValeraConfig.canReplayNetwork())
+        				ret = ValeraIOManager.getInstance().replayPlainSocketWrite(connId);
+        			else
+        				socketImpl.write(buffer, offset, byteCount);
+        		} catch (IOException ioe) {
+        			throw ioe;
+        		}
+        		if (ret == ValeraIOManager.CONNECTION_NOT_FOUND)
+    				socketImpl.write(buffer, offset, byteCount);
+        		break;
+        	}
+            /* valere end */
         }
     }
 

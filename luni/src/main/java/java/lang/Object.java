@@ -129,6 +129,12 @@ package java.lang;
  * <p>See <i>Effective Java</i> item 10 for much more detail and clarification.
  */
 public class Object {
+	
+	/* valera begin */
+	// Object Id for this class, i.e. the ith obj of the class.
+	// private int objId;
+	/* valera end */
+	
     /**
      * Constructs a new instance of {@code Object}.
      */
